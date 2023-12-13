@@ -252,7 +252,7 @@ class Resolver(BaseResolver):
         except KeyError:
             existing_req = None
 
-        has_conflicting_requirement = (
+        if has_conflicting_requirement := (
             parent_req_name is None
             and existing_req
             and not existing_req.constraint
@@ -260,8 +260,7 @@ class Resolver(BaseResolver):
             and existing_req.req
             and install_req.req
             and existing_req.req.specifier != install_req.req.specifier
-        )
-        if has_conflicting_requirement:
+        ):
             raise InstallationError(
                 "Double requirement given: {} (already in {}, name={!r})".format(
                     install_req, existing_req, install_req.name
@@ -280,10 +279,9 @@ class Resolver(BaseResolver):
         if install_req.constraint or not existing_req.constraint:
             return [], existing_req
 
-        does_not_satisfy_constraint = install_req.link and not (
+        if does_not_satisfy_constraint := install_req.link and not (
             existing_req.link and install_req.link.path == existing_req.link.path
-        )
-        if does_not_satisfy_constraint:
+        ):
             raise InstallationError(
                 f"Could not satisfy constraints for '{install_req.name}': "
                 "installation from path or url cannot be "

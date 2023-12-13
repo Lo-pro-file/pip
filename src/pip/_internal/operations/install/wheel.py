@@ -166,9 +166,7 @@ def message_about_scripts_not_on_PATH(scripts: Sequence[str]) -> Optional[str]:
         if len(sorted_scripts) == 1:
             start_text = f"script {sorted_scripts[0]} is"
         else:
-            start_text = "scripts {} are".format(
-                ", ".join(sorted_scripts[:-1]) + " and " + sorted_scripts[-1]
-            )
+            start_text = f'scripts {", ".join(sorted_scripts[:-1]) + " and " + sorted_scripts[-1]} are'
 
         msg_lines.append(
             f"The {start_text} installed in '{parent_dir}' which is not on PATH."
@@ -280,43 +278,9 @@ def get_console_script_specs(console: Dict[str, str]) -> List[str]:
 
     scripts_to_generate = []
 
-    # Special case pip and setuptools to generate versioned wrappers
-    #
-    # The issue is that some projects (specifically, pip and setuptools) use
-    # code in setup.py to create "versioned" entry points - pip2.7 on Python
-    # 2.7, pip3.3 on Python 3.3, etc. But these entry points are baked into
-    # the wheel metadata at build time, and so if the wheel is installed with
-    # a *different* version of Python the entry points will be wrong. The
-    # correct fix for this is to enhance the metadata to be able to describe
-    # such versioned entry points, but that won't happen till Metadata 2.0 is
-    # available.
-    # In the meantime, projects using versioned entry points will either have
-    # incorrect versioned entry points, or they will not be able to distribute
-    # "universal" wheels (i.e., they will need a wheel per Python version).
-    #
-    # Because setuptools and pip are bundled with _ensurepip and virtualenv,
-    # we need to use universal wheels. So, as a stopgap until Metadata 2.0, we
-    # override the versioned entry points in the wheel and generate the
-    # correct ones. This code is purely a short-term measure until Metadata 2.0
-    # is available.
-    #
-    # To add the level of hack in this section of code, in order to support
-    # ensurepip this code will look for an ``ENSUREPIP_OPTIONS`` environment
-    # variable which will control which version scripts get installed.
-    #
-    # ENSUREPIP_OPTIONS=altinstall
-    #   - Only pipX.Y and easy_install-X.Y will be generated and installed
-    # ENSUREPIP_OPTIONS=install
-    #   - pipX.Y, pipX, easy_install-X.Y will be generated and installed. Note
-    #     that this option is technically if ENSUREPIP_OPTIONS is set and is
-    #     not altinstall
-    # DEFAULT
-    #   - The default behavior is to install pip, pipX, pipX.Y, easy_install
-    #     and easy_install-X.Y.
-    pip_script = console.pop("pip", None)
-    if pip_script:
+    if pip_script := console.pop("pip", None):
         if "ENSUREPIP_OPTIONS" not in os.environ:
-            scripts_to_generate.append("pip = " + pip_script)
+            scripts_to_generate.append(f"pip = {pip_script}")
 
         if os.environ.get("ENSUREPIP_OPTIONS", "") != "altinstall":
             scripts_to_generate.append(f"pip{sys.version_info[0]} = {pip_script}")
@@ -326,10 +290,9 @@ def get_console_script_specs(console: Dict[str, str]) -> List[str]:
         pip_ep = [k for k in console if re.match(r"pip(\d+(\.\d+)?)?$", k)]
         for k in pip_ep:
             del console[k]
-    easy_install_script = console.pop("easy_install", None)
-    if easy_install_script:
+    if easy_install_script := console.pop("easy_install", None):
         if "ENSUREPIP_OPTIONS" not in os.environ:
-            scripts_to_generate.append("easy_install = " + easy_install_script)
+            scripts_to_generate.append(f"easy_install = {easy_install_script}")
 
         scripts_to_generate.append(
             f"easy_install-{get_major_minor_version()} = {easy_install_script}"
@@ -450,11 +413,7 @@ def _install_wheel(
     """
     info_dir, metadata = parse_wheel(wheel_zip, name)
 
-    if wheel_root_is_purelib(metadata):
-        lib_dir = scheme.purelib
-    else:
-        lib_dir = scheme.platlib
-
+    lib_dir = scheme.purelib if wheel_root_is_purelib(metadata) else scheme.platlib
     # Record details of the files moved
     #   installed = files copied from the wheel to the destination
     #   changed = files changed while installing (scripts #! line typically)

@@ -63,7 +63,7 @@ class SafeFileCache(SeparateBodyBaseCache):
     def get(self, key: str) -> Optional[bytes]:
         # The cache entry is only valid if both metadata and body exist.
         metadata_path = self._get_cache_path(key)
-        body_path = metadata_path + ".body"
+        body_path = f"{metadata_path}.body"
         if not (os.path.exists(metadata_path) and os.path.exists(body_path)):
             return None
         with suppressed_cache_errors():
@@ -90,17 +90,17 @@ class SafeFileCache(SeparateBodyBaseCache):
         with suppressed_cache_errors():
             os.remove(path)
         with suppressed_cache_errors():
-            os.remove(path + ".body")
+            os.remove(f"{path}.body")
 
     def get_body(self, key: str) -> Optional[BinaryIO]:
         # The cache entry is only valid if both metadata and body exist.
         metadata_path = self._get_cache_path(key)
-        body_path = metadata_path + ".body"
+        body_path = f"{metadata_path}.body"
         if not (os.path.exists(metadata_path) and os.path.exists(body_path)):
             return None
         with suppressed_cache_errors():
             return open(body_path, "rb")
 
     def set_body(self, key: str, body: bytes) -> None:
-        path = self._get_cache_path(key) + ".body"
+        path = f"{self._get_cache_path(key)}.body"
         self._write(path, body)

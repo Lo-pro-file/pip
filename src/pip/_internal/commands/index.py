@@ -135,5 +135,5 @@ class IndexCommand(IndexGroupCommand):
             latest = formatted_versions[0]
 
         write_output(f"{query} ({latest})")
-        write_output("Available versions: {}".format(", ".join(formatted_versions)))
+        write_output(f'Available versions: {", ".join(formatted_versions)}')
         print_dist_installation_info(query, latest)

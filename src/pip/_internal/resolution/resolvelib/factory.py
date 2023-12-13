@@ -276,9 +276,7 @@ class Factory:
                 template=template,
             )
             # The candidate is a known incompatibility. Don't use it.
-            if id(candidate) in incompatible_ids:
-                return None
-            return candidate
+            return None if id(candidate) in incompatible_ids else candidate
 
         def iter_index_candidate_infos() -> Iterator[IndexCandidateInfo]:
             result = self._finder.find_best_candidate(
@@ -308,7 +306,7 @@ class Factory:
 
             # PackageFinder returns earlier versions first, so we reverse.
             for ican in reversed(icans):
-                if not (all_yanked and pinned) and ican.link.is_yanked:
+                if (not all_yanked or not pinned) and ican.link.is_yanked:
                     continue
                 func = functools.partial(
                     self._make_candidate_from_link,
@@ -362,14 +360,13 @@ class Factory:
         """
         for link in constraint.links:
             self._fail_if_link_is_unsupported_wheel(link)
-            candidate = self._make_candidate_from_link(
+            if candidate := self._make_candidate_from_link(
                 link,
                 extras=frozenset(),
                 template=install_req_from_link_and_ireq(link, template),
                 name=canonicalize_name(identifier),
                 version=None,
-            )
-            if candidate:
+            ):
                 yield candidate
 
     def find_candidates(
@@ -497,9 +494,7 @@ class Factory:
         collected = CollectedRootRequirements([], {}, {})
         for i, ireq in enumerate(root_ireqs):
             if ireq.constraint:
-                # Ensure we only accept valid constraints
-                problem = check_invalid_constraint_type(ireq)
-                if problem:
+                if problem := check_invalid_constraint_type(ireq):
                     raise InstallationError(problem)
                 if not ireq.match_markers():
                     continue
@@ -639,11 +634,7 @@ class Factory:
     def _report_single_requirement_conflict(
         self, req: Requirement, parent: Optional[Candidate]
     ) -> DistributionNotFound:
-        if parent is None:
-            req_disp = str(req)
-        else:
-            req_disp = f"{req} (from {parent.name})"
-
+        req_disp = str(req) if parent is None else f"{req} (from {parent.name})"
         cands = self._finder.find_all_candidates(req.project_name)
         skipped_by_requires_python = self._finder.requires_python_skipped_reasons()
 
@@ -657,9 +648,7 @@ class Factory:
                 versions_set.add(c.version)
 
         versions = [str(v) for v in sorted(versions_set)]
-        yanked_versions = [str(v) for v in sorted(yanked_versions_set)]
-
-        if yanked_versions:
+        if yanked_versions := [str(v) for v in sorted(yanked_versions_set)]:
             # Saying "version X is yanked" isn't entirely accurate.
             # https://github.com/pypa/pip/issues/11745#issuecomment-1402805842
             logger.critical(
@@ -747,11 +736,7 @@ class Factory:
                 trigger = describe_trigger(parent)
             triggers.add(trigger)
 
-        if triggers:
-            info = text_join(sorted(triggers))
-        else:
-            info = "the requested packages"
-
+        info = text_join(sorted(triggers)) if triggers else "the requested packages"
         msg = (
             f"Cannot install {info} because these package versions "
             "have conflicting dependencies."
@@ -765,9 +750,9 @@ class Factory:
                 relevant_constraints.add(req.name)
             msg = msg + "\n    "
             if parent:
-                msg = msg + f"{parent.name} {parent.version} depends on "
+                msg = f"{msg}{parent.name} {parent.version} depends on "
             else:
-                msg = msg + "The user requested "
+                msg = f"{msg}The user requested "
             msg = msg + req.format_for_error()
         for key in relevant_constraints:
             spec = constraints[key].specifier
