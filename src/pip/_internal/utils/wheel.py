@@ -51,7 +51,7 @@ def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
 
     if len(info_dirs) > 1:
         raise UnsupportedWheel(
-            "multiple .dist-info directories found: {}".format(", ".join(info_dirs))
+            f'multiple .dist-info directories found: {", ".join(info_dirs)}'
         )
 
     info_dir = info_dirs[0]
@@ -124,8 +124,7 @@ def check_compatibility(version: Tuple[int, ...], name: str) -> None:
     """
     if version[0] > VERSION_COMPATIBLE[0]:
         raise UnsupportedWheel(
-            "{}'s Wheel-Version ({}) is not compatible with this version "
-            "of pip".format(name, ".".join(map(str, version)))
+            f"""{name}'s Wheel-Version ({".".join(map(str, version))}) is not compatible with this version of pip"""
         )
     elif version > VERSION_COMPATIBLE:
         logger.warning(

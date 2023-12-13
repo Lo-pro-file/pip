@@ -132,11 +132,7 @@ class CacheCommand(Command):
         if len(args) > 1:
             raise CommandError("Too many arguments")
 
-        if args:
-            pattern = args[0]
-        else:
-            pattern = "*"
-
+        pattern = args[0] if args else "*"
         files = self._find_wheels(options, pattern)
         if options.list_format == "human":
             self.format_for_human(files)
@@ -220,6 +216,6 @@ class CacheCommand(Command):
         #   match the hyphen before the version, followed by anything else.
         #
         # PEP 427: https://www.python.org/dev/peps/pep-0427/
-        pattern = pattern + ("*.whl" if "-" in pattern else "-*.whl")
+        pattern += "*.whl" if "-" in pattern else "-*.whl"
 
         return filesystem.find_files(wheel_dir, pattern)

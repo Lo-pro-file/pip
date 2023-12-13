@@ -65,7 +65,7 @@ class CacheController:
         """Normalize the URL to create a safe key for the cache"""
         (scheme, authority, path, query, fragment) = parse_uri(uri)
         if not scheme or not authority:
-            raise Exception("Only absolute URIs are allowed. uri = %s" % uri)
+            raise Exception(f"Only absolute URIs are allowed. uri = {uri}")
 
         scheme = scheme.lower()
         authority = authority.lower()
@@ -76,9 +76,7 @@ class CacheController:
         # Could do syntax based normalization of the URI before
         # computing the digest. See Section 6.2.2 of Std 66.
         request_uri = query and "?".join([path, query]) or path
-        defrag_uri = scheme + "://" + authority + request_uri
-
-        return defrag_uri
+        return f"{scheme}://{authority}{request_uri}"
 
     @classmethod
     def cache_url(cls, uri: str) -> str:
@@ -402,15 +400,10 @@ class CacheController:
             logger.debug("Caching due to etag")
             self._cache_set(cache_url, request, response, body, expires_time)
 
-        # Add to the cache any permanent redirects. We do this before looking
-        # that the Date headers.
         elif int(response.status) in PERMANENT_REDIRECT_STATUSES:
             logger.debug("Caching permanent redirect")
             self._cache_set(cache_url, request, response, b"")
 
-        # Add to the cache if the response headers demand it. If there
-        # is no date header then we can't do anything about expiring
-        # the cache.
         elif "date" in response_headers:
             time_tuple = parsedate_tz(response_headers["date"])
             assert time_tuple is not None
@@ -428,20 +421,12 @@ class CacheController:
                     expires_time,
                 )
 
-            # If the request can expire, it means we should cache it
-            # in the meantime.
             elif "expires" in response_headers:
                 if response_headers["expires"]:
                     expires = parsedate_tz(response_headers["expires"])
-                    if expires is not None:
-                        expires_time = calendar.timegm(expires[:6]) - date
-                    else:
-                        expires_time = None
-
+                    expires_time = None if expires is None else calendar.timegm(expires[:6]) - date
                     logger.debug(
-                        "Caching b/c of expires header. expires in {} seconds".format(
-                            expires_time
-                        )
+                        f"Caching b/c of expires header. expires in {expires_time} seconds"
                     )
                     self._cache_set(
                         cache_url,

@@ -91,8 +91,8 @@ def check_dist_restriction(options: Values, check_target: bool = False) -> None:
             ":none:)."
         )
 
-    if check_target:
-        if not options.dry_run and dist_restriction_set and not options.target_dir:
+    if not options.dry_run and dist_restriction_set and not options.target_dir:
+        if check_target:
             raise CommandError(
                 "Can not use any platform or abi specific options unless "
                 "installing via '--target' or using '--dry-run'"
@@ -651,14 +651,12 @@ def add_target_python_options(cmd_opts: OptionGroup) -> None:
 
 
 def make_target_python(options: Values) -> TargetPython:
-    target_python = TargetPython(
+    return TargetPython(
         platforms=options.platforms,
         py_version_info=options.python_version,
         abis=options.abis,
         implementation=options.implementation,
     )
-
-    return target_python
 
 
 def prefer_binary() -> Option:
@@ -924,9 +922,7 @@ def _handle_merge_hash(
         )
     if algo not in STRONG_HASHES:
         parser.error(
-            "Allowed hash algorithms for {} are {}.".format(
-                opt_str, ", ".join(STRONG_HASHES)
-            )
+            f'Allowed hash algorithms for {opt_str} are {", ".join(STRONG_HASHES)}.'
         )
     parser.values.hashes.setdefault(algo, []).append(digest)
 

@@ -126,7 +126,7 @@ class _FileCacheMixin:
         except OSError:
             pass
 
-        with self.lock_class(path + ".lock"):
+        with self.lock_class(f"{path}.lock"):
             # Write our actual file
             with _secure_open_write(path, self.filemode) as fh:
                 fh.write(data)
@@ -157,14 +157,14 @@ class SeparateBodyFileCache(_FileCacheMixin, SeparateBodyBaseCache):
     """
 
     def get_body(self, key: str) -> IO[bytes] | None:
-        name = self._fn(key) + ".body"
+        name = f"{self._fn(key)}.body"
         try:
             return open(name, "rb")
         except FileNotFoundError:
             return None
 
     def set_body(self, key: str, body: bytes) -> None:
-        name = self._fn(key) + ".body"
+        name = f"{self._fn(key)}.body"
         self._write(name, body)
 
     def delete(self, key: str) -> None:

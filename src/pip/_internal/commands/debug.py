@@ -72,8 +72,7 @@ def get_vendor_version_from_module(module_name: str) -> Optional[str]:
         # Try to find version in debundled module info.
         assert module.__file__ is not None
         env = get_environment([os.path.dirname(module.__file__)])
-        dist = env.get_distribution(module_name)
-        if dist:
+        if dist := env.get_distribution(module_name):
             version = str(dist.version)
 
     return version
@@ -114,12 +113,10 @@ def show_tags(options: Values) -> None:
     target_python = make_target_python(options)
     tags = target_python.get_sorted_tags()
 
-    # Display the target options that were explicitly provided.
-    formatted_target = target_python.format_given()
-    suffix = ""
-    if formatted_target:
+    if formatted_target := target_python.format_given():
         suffix = f" (target: {formatted_target})"
-
+    else:
+        suffix = ""
     msg = f"Compatible tags: {len(tags)}{suffix}"
     logger.info(msg)
 

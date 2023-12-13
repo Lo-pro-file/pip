@@ -37,17 +37,16 @@ class Serializer:
 
         data = {
             "response": {
-                "body": body,  # Empty bytestring if body is stored separately
-                "headers": {str(k): str(v) for k, v in response.headers.items()},  # type: ignore[no-untyped-call]
+                "body": body,
+                "headers": {str(k): str(v) for k, v in response.headers.items()},
                 "status": response.status,
                 "version": response.version,
                 "reason": str(response.reason),
                 "decode_content": response.decode_content,
-            }
+            },
+            "vary": {},
         }
 
-        # Construct our vary headers
-        data["vary"] = {}
         if "vary" in response_headers:
             varied_headers = response_headers["vary"].split(",")
             for header in varied_headers:
@@ -131,10 +130,7 @@ class Serializer:
 
         try:
             body: IO[bytes]
-            if body_file is None:
-                body = io.BytesIO(body_raw)
-            else:
-                body = body_file
+            body = io.BytesIO(body_raw) if body_file is None else body_file
         except TypeError:
             # This can happen if cachecontrol serialized to v1 format (pickle)
             # using Python 2. A Python 2 str(byte string) will be unpickled as

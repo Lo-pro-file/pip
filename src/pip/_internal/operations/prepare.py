@@ -637,14 +637,13 @@ class RequirementPreparer:
         if local_file:
             req.local_file_path = local_file.path
 
-        dist = _get_prepared_distribution(
+        return _get_prepared_distribution(
             req,
             self.build_tracker,
             self.finder,
             self.build_isolation,
             self.check_build_deps,
         )
-        return dist
 
     def save_linked_requirement(self, req: InstallRequirement) -> None:
         assert self.download_dir is not None
